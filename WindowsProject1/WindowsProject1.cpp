@@ -15,7 +15,6 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -123,20 +122,83 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static TCHAR szInput[] =
+		TEXT("输入（文件路径）：");
+	static TCHAR szResult[] = 
+		TEXT("结果：");
+	static HWND hwndButton = NULL;
+	static HWND hwndEdit = NULL;
+	static HWND hwndInput = NULL;
+	static HBRUSH hBrush;
+	static HFONT hFont;
+	RECT rect;
+	PAINTSTRUCT ps;
+	HDC hdc;
+	TEXTMETRIC tm;
+	static int cxChar, cyChar;    //系统字体的平均宽度、高度
+
     switch (message)
     {
+
+	case WM_CREATE:
+		hdc = GetDC(hWnd);                //获取设备环境句柄
+		GetTextMetrics(hdc, &tm);         //获取系统字体信息
+		ReleaseDC(hWnd, hdc);             //设备环境句柄使用完毕, 释放
+
+		cxChar = tm.tmAveCharWidth;                     //得到字体平均宽度
+		cyChar = tm.tmHeight + tm.tmExternalLeading;    //字体高度, 总高度tmHeight + 两行文字之间的建议间距大小tmExternalLeading
+
+
+
+		hwndButton = CreateWindowW(
+			TEXT("BUTTON"),
+			TEXT("MD5"),
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+			0,0,0,0,
+			hWnd, (HMENU)BUTTON_ID, hInst, NULL);
+
+		hwndInput = CreateWindowW(TEXT("edit"), NULL,
+			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT | ES_MULTILINE ,
+			0, 0, 0, 0,
+			hWnd, (HMENU)INPUT_ID, hInst, NULL);
+
+		hwndEdit = CreateWindowW(TEXT("edit"), NULL,
+			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT | ES_MULTILINE | ES_READONLY,
+			0, 0, 0, 0,
+			hWnd, (HMENU)EDIT_ID, hInst, NULL);
+
+
+		hBrush = CreateSolidBrush(RGB(0x41, 0x96, 0x4F));
+
+		hFont = CreateFont(-20/*高*/, -10/*宽*/, 0, 0, 100 /*700表示粗体*/,
+			FALSE/*斜体?*/, FALSE/*下划线?*/, FALSE/*删除线?*/, DEFAULT_CHARSET,
+			OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY,
+			FF_DONTCARE, TEXT("宋体")
+		);
+		SendMessage(hwndEdit, WM_SETFONT, (WPARAM)hFont, NULL);
+		SendMessage(hwndInput, WM_SETFONT, (WPARAM)hFont, NULL);
+		break;
+
+	case WM_SETFOCUS:
+		SetFocus(hwndInput);
+		return 0;
+
+	case WM_SIZE:
+		GetClientRect(hWnd, &rect);
+		MoveWindow(hwndButton, rect.right / 2 - 40, rect.bottom - 60, 80, 40, TRUE);
+		MoveWindow(hwndInput, 10,30, rect.right - 20, rect.bottom / 2 - 20 - 20, TRUE);
+		MoveWindow(hwndEdit, 10, rect.bottom / 2 + 20, rect.right - 20, rect.bottom / 2 - 20 - 80 , TRUE);
+		break;
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-            // 分析菜单选择:
             switch (wmId)
             {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
+			case BUTTON_ID:
+				
+				break;
+
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -144,9 +206,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
         {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 在此处添加使用 hdc 的任何绘图代码...
+			GetClientRect(hWnd, &rect);
+            hdc = BeginPaint(hWnd, &ps);
+			SelectObject(hdc, GetStockObject(SYSTEM_FIXED_FONT));
+			TextOut(hdc, 10, 10, szInput, lstrlen(szInput));
+			TextOut(hdc, 10, rect.bottom / 2, szResult, lstrlen(szResult));
             EndPaint(hWnd, &ps);
         }
         break;
@@ -159,22 +223,4 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-// “关于”框的消息处理程序。
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
-}

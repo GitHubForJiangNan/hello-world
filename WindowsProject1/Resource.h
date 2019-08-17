@@ -2,6 +2,12 @@
 // Microsoft Visual C++ 生成的包含文件。
 // 使用者 WindowsProject1.rc
 
+
+#define BUTTON_ID				10001
+#define EDIT_ID					10002
+#define INPUT_ID				10003
+
+
 #define IDS_APP_TITLE			103
 
 #define IDR_MAINFRAME			128
